@@ -14,11 +14,15 @@ namespace PodcastAggregator
 {
     public class Aggregator
     {
+        const string DownloadDir = "E:\\Downloads\\! Podcasts";
+
         public void ProcessOPML(string FileName, bool DownloadEnclosures)
         {
             // load OPML file
             if (!File.Exists(FileName))
                 return; // got no file to load
+
+            DeleteOldFiles();
 
             try
             {
@@ -30,6 +34,26 @@ namespace PodcastAggregator
                     ProcessFeed(outline, DownloadEnclosures);
             }
             catch { /* something went wrong ...  don't care */ }
+        }
+
+        void DeleteOldFiles()
+        {
+            try
+            {
+                //first, delete all old files (if any)
+                foreach (string existingFile in Directory.GetFiles(DownloadDir))
+                {
+                    try
+                    {
+                        // if file is older than 2 weeks, delete it!
+                        DateTime LastMod = File.GetLastWriteTime(existingFile);
+                        if (LastMod.AddDays(14) < DateTime.Now)
+                            File.Delete(existingFile);
+                    }
+                    catch { /* couldn't delete file */ }
+                }
+            }
+            catch { /* GetFiles failed */ }
         }
 
         void ProcessFeed(XmlNode outline, bool DownloadEnclosures)
@@ -187,7 +211,7 @@ namespace PodcastAggregator
                 DownloadFileName = RemoveInvalidFileChars(DownloadFileName);
 
                 // insert full path into DownloadFileName
-                DownloadFileName = "E:\\Downloads\\! Podcasts\\" + DownloadFileName;
+                DownloadFileName = DownloadDir + DownloadFileName;
 
 #if !DEBUG
                 if (DownloadURI.Host.Contains("youtube.com")) // youtube URL? then we need to download using our "special" method
